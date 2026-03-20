@@ -4,3 +4,4 @@ backend/out/
 backend/config.properties
 contacts.db
 out/
+.idea/workspace.xml
