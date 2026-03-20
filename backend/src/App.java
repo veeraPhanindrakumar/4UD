@@ -30,12 +30,12 @@ import java.util.Properties;
 import java.util.HexFormat;
 
 public class App {
-    private static final int PORT = 3000;
+    private static final int PORT = resolvePort();
     private static final Path ROOT = Paths.get("..", "frontend").toAbsolutePath().normalize();
     private static final Properties CONFIG = loadConfig();
-    private static final String DB_URL = requiredConfig("db.url");
-    private static final String DB_USER = requiredConfig("db.user");
-    private static final String DB_PASSWORD = requiredConfig("db.password");
+    private static final String DB_URL = requiredConfig("db.url", "DB_URL", "MYSQL_URL");
+    private static final String DB_USER = requiredConfig("db.user", "DB_USER", "MYSQLUSER", "MYSQL_USER");
+    private static final String DB_PASSWORD = requiredConfig("db.password", "DB_PASSWORD", "MYSQLPASSWORD", "MYSQL_PASSWORD");
     private static final String HASH_PREFIX = "sha256:";
 
     public static void main(String[] args) throws Exception {
@@ -54,21 +54,44 @@ public class App {
         Properties properties = new Properties();
         Path configPath = Paths.get("config.properties");
 
-        try (InputStream inputStream = Files.newInputStream(configPath)) {
-            properties.load(inputStream);
-        } catch (IOException exception) {
-            throw new IllegalStateException("Missing backend/config.properties file.", exception);
+        if (Files.exists(configPath)) {
+            try (InputStream inputStream = Files.newInputStream(configPath)) {
+                properties.load(inputStream);
+            } catch (IOException exception) {
+                throw new IllegalStateException("Unable to read backend/config.properties file.", exception);
+            }
         }
 
         return properties;
     }
 
-    private static String requiredConfig(String key) {
-        String value = CONFIG.getProperty(key);
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Missing config value: " + key);
+    private static String requiredConfig(String propertyKey, String... envKeys) {
+        String value = CONFIG.getProperty(propertyKey);
+        if (value != null && !value.isBlank()) {
+            return value.trim();
         }
-        return value.trim();
+
+        for (String envKey : envKeys) {
+            String envValue = System.getenv(envKey);
+            if (envValue != null && !envValue.isBlank()) {
+                return envValue.trim();
+            }
+        }
+
+        throw new IllegalStateException("Missing config value: " + propertyKey);
+    }
+
+    private static int resolvePort() {
+        String envPort = System.getenv("PORT");
+        if (envPort == null || envPort.isBlank()) {
+            return 3000;
+        }
+
+        try {
+            return Integer.parseInt(envPort.trim());
+        } catch (NumberFormatException exception) {
+            throw new IllegalStateException("Invalid PORT value: " + envPort, exception);
+        }
     }
 
     private static void initializeDatabase() throws SQLException {

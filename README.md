@@ -30,3 +30,30 @@ http://localhost:3000
 - Admin and student login backed by MySQL
 - Hashed passwords
 - Admin dashboard with enquiry review and hide action
+
+## Deploy
+
+This project is prepared for Railway-style deployment with Docker.
+
+### Required environment variables
+
+- `PORT`
+- `DB_URL` or `MYSQL_URL`
+- `DB_USER` or `MYSQLUSER`
+- `DB_PASSWORD` or `MYSQLPASSWORD`
+
+Example:
+
+```text
+DB_URL=jdbc:mysql://<host>:3306/myproject?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+DB_USER=myproject_user
+DB_PASSWORD=your_password
+```
+
+### Railway
+
+1. Create a new project in Railway.
+2. Add a MySQL service.
+3. Deploy this GitHub repo as a service using the root `Dockerfile`.
+4. Set the database environment variables on the deployed service.
+5. Open the generated public Railway URL and share it.

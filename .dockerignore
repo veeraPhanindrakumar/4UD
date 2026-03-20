@@ -1,0 +1,7 @@
+.git
+.idea
+backend/out
+backend/data
+backend/config.properties
+contacts.db
+out
