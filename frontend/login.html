@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <nav class="navbar">
+      <div class="brand">My Project</div>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="login.html">Login</a></li>
+      </ul>
+    </nav>
+
+    <main class="content single-page">
+      <section class="card">
+        <h2>Login</h2>
+        <p>Choose the correct login type for your account.</p>
+        <form class="form" id="login-form">
+          <div class="role-switch" aria-label="Login type">
+            <label class="switch-option">
+              <input type="radio" name="role" value="admin" checked>
+              <span>Admin</span>
+            </label>
+            <label class="switch-option">
+              <input type="radio" name="role" value="student">
+              <span>Student</span>
+            </label>
+          </div>
+          <input type="email" id="username" placeholder="Email address" required>
+          <input type="password" id="password" placeholder="Password" required>
+          <button type="submit">Login</button>
+        </form>
+        <p id="login-message" class="form-message" aria-live="polite"></p>
+      </section>
+    </main>
+  </header>
+  <script>
+    const existingAuth = sessionStorage.getItem('myproject_auth');
+    if (existingAuth) {
+      try {
+        const auth = JSON.parse(existingAuth);
+        if (auth.role === 'admin') {
+          window.location.href = 'admin/dashboard.html';
+        } else if (auth.role === 'student') {
+          window.location.href = 'student/home.html';
+        }
+      } catch {
+        sessionStorage.removeItem('myproject_auth');
+      }
+    }
+
+    const loginForm = document.getElementById('login-form');
+    const loginMessage = document.getElementById('login-message');
+
+    loginForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const role = document.querySelector('input[name="role"]:checked').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      if (!username || !password) {
+        loginMessage.textContent = 'Please enter username and password.';
+        loginMessage.className = 'form-message error';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            role,
+            username,
+            password
+          })
+        });
+
+        const result = await response.json();
+        loginMessage.textContent = result.message;
+        loginMessage.className = response.ok ? 'form-message success' : 'form-message error';
+
+        if (response.ok && result.redirect) {
+          sessionStorage.setItem('myproject_auth', JSON.stringify({
+            role,
+            username
+          }));
+          window.location.href = result.redirect;
+        }
+      } catch {
+        loginMessage.textContent = 'Unable to login right now. Please try again.';
+        loginMessage.className = 'form-message error';
+      }
+    });
+  </script>
+</body>
+</html>

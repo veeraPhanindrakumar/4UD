@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <nav class="navbar">
+      <div class="brand">My Project</div>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="login.html">Login</a></li>
+      </ul>
+    </nav>
+
+    <main class="content single-page">
+      <section class="card">
+        <h2>Contact</h2>
+        <p>Reach out for support or questions.</p>
+        <form class="form" id="contact-form">
+          <input type="text" id="name" placeholder="Your name" required>
+          <input type="tel" id="phone" placeholder="10-digit phone number" inputmode="numeric" pattern="[0-9]{10}" maxlength="10" required>
+          <input type="email" id="email" placeholder="Your email" required>
+          <textarea id="address" placeholder="Your address" required></textarea>
+          <button type="submit">Send Message</button>
+        </form>
+        <p id="form-message" class="form-message" aria-live="polite"></p>
+      </section>
+    </main>
+  </header>
+  <script>
+    const contactForm = document.getElementById('contact-form');
+    const formMessage = document.getElementById('form-message');
+    const phoneInput = document.getElementById('phone');
+
+    phoneInput.addEventListener('input', function () {
+      phoneInput.value = phoneInput.value.replace(/\D/g, '').slice(0, 10);
+    });
+
+    contactForm.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const address = document.getElementById('address').value.trim();
+      const phoneDigits = phone.replace(/\D/g, '');
+
+      if (!name || !email || !address || phoneDigits.length !== 10) {
+        formMessage.textContent = 'Please enter name, email, address, and a valid 10-digit phone number.';
+        formMessage.className = 'form-message error';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name,
+            phone: phoneDigits,
+            email,
+            address
+          })
+        });
+
+        const result = await response.json();
+        formMessage.textContent = result.message;
+        formMessage.className = response.ok ? 'form-message success' : 'form-message error';
+
+        if (response.ok) {
+          contactForm.reset();
+        }
+      } catch {
+        formMessage.textContent = 'Unable to submit right now. Please try again.';
+        formMessage.className = 'form-message error';
+      }
+    });
+  </script>
+</body>
+</html>

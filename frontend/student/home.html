@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Home</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../auth.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <nav class="navbar">
+      <div class="brand">My Project</div>
+      <ul class="nav-links">
+        <li><a href="home.html">Student</a></li>
+        <li><button type="button" id="logout-button" class="nav-button">Logout</button></li>
+      </ul>
+    </nav>
+
+    <section class="hero-content">
+      <p class="eyebrow">Student</p>
+      <h1>Student Home Page</h1>
+      <p class="intro">
+        This page is separated from the admin area and can be expanded with student-specific features later.
+      </p>
+    </section>
+  </header>
+  <script>
+    MyProjectAuth.requireRole('student');
+    MyProjectAuth.attachLogout('logout-button', '../login.html');
+  </script>
+</body>
+</html>

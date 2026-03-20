@@ -1,0 +1,28 @@
+CREATE DATABASE IF NOT EXISTS myproject;
+
+USE myproject;
+
+CREATE TABLE IF NOT EXISTS contacts (
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(10) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  address TEXT NOT NULL,
+  hidden_ind CHAR(1) NOT NULL DEFAULT 'N',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  CONSTRAINT uk_contacts_name UNIQUE (name),
+  CONSTRAINT uk_contacts_phone UNIQUE (phone)
+);
+
+CREATE TABLE IF NOT EXISTS admins (
+  admin_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  admin_ind CHAR(1) NOT NULL DEFAULT 'N'
+);
+
+CREATE TABLE IF NOT EXISTS students (
+  student_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  admin_ind CHAR(1) NOT NULL DEFAULT 'N'
+);

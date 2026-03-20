@@ -1,0 +1,6 @@
+backend/data/contacts.mv.db
+backend/data/contacts.trace.db
+backend/out/
+backend/config.properties
+contacts.db
+out/

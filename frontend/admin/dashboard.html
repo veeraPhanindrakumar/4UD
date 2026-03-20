@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="../auth.js"></script>
+</head>
+<body>
+  <header class="hero">
+    <nav class="navbar">
+      <div class="brand">My Project</div>
+      <ul class="nav-links">
+        <li><a href="dashboard.html">Admin</a></li>
+        <li><button type="button" id="logout-button" class="nav-button">Logout</button></li>
+      </ul>
+    </nav>
+
+    <main class="content single-page admin-layout">
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2>Admin Dashboard</h2>
+            <p>Monitor new enquiries and review contact details from the database.</p>
+          </div>
+          <button type="button" id="refresh-button" class="secondary-button">Refresh</button>
+        </div>
+
+        <div class="subtabs" role="tablist" aria-label="Admin sections">
+          <button type="button" class="subtab-button active" data-tab="new-enquiry">New Enquiry</button>
+          <button type="button" class="subtab-button" data-tab="contact-details">Contact Details</button>
+        </div>
+
+        <p id="admin-message" class="form-message" aria-live="polite"></p>
+
+        <section class="tab-panel active" id="new-enquiry">
+          <div class="stats-grid">
+            <article class="stat-card">
+              <p class="stat-label">Total Enquiries</p>
+              <h3 id="total-enquiries">0</h3>
+            </article>
+            <article class="stat-card">
+              <p class="stat-label">Latest Phone</p>
+              <h3 id="latest-phone">-</h3>
+            </article>
+          </div>
+
+          <div class="card nested-card">
+            <h3>Latest Enquiry</h3>
+            <dl class="detail-list">
+              <div><dt>Name</dt><dd id="latest-name">-</dd></div>
+              <div><dt>Email</dt><dd id="latest-email">-</dd></div>
+              <div><dt>Address</dt><dd id="latest-address">-</dd></div>
+              <div><dt>Submitted</dt><dd id="latest-created">-</dd></div>
+            </dl>
+          </div>
+        </section>
+
+        <section class="tab-panel" id="contact-details">
+          <div class="action-row">
+            <button type="button" id="hide-selected-button" class="secondary-button">Submit Selected</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Hide</th>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Address</th>
+                  <th>Submitted</th>
+                </tr>
+              </thead>
+              <tbody id="contacts-body">
+                <tr>
+                  <td colspan="5">Loading contacts...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </header>
+
+  <script>
+    MyProjectAuth.requireRole('admin');
+    MyProjectAuth.attachLogout('logout-button', '../login.html');
+
+    const contactsBody = document.getElementById('contacts-body');
+    const adminMessage = document.getElementById('admin-message');
+    const refreshButton = document.getElementById('refresh-button');
+    const totalEnquiries = document.getElementById('total-enquiries');
+    const latestName = document.getElementById('latest-name');
+    const latestPhone = document.getElementById('latest-phone');
+    const latestEmail = document.getElementById('latest-email');
+    const latestAddress = document.getElementById('latest-address');
+    const latestCreated = document.getElementById('latest-created');
+    const tabButtons = document.querySelectorAll('.subtab-button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    const hideSelectedButton = document.getElementById('hide-selected-button');
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function switchTab(tabId) {
+      tabButtons.forEach((button) => {
+        button.classList.toggle('active', button.dataset.tab === tabId);
+      });
+
+      tabPanels.forEach((panel) => {
+        panel.classList.toggle('active', panel.id === tabId);
+      });
+    }
+
+    function renderSummary(contacts) {
+      totalEnquiries.textContent = contacts.length;
+
+      if (!contacts.length) {
+        latestName.textContent = '-';
+        latestPhone.textContent = '-';
+        latestEmail.textContent = '-';
+        latestAddress.textContent = '-';
+        latestCreated.textContent = '-';
+        return;
+      }
+
+      const latest = contacts[0];
+      latestName.textContent = latest.name;
+      latestPhone.textContent = latest.phone;
+      latestEmail.textContent = latest.email;
+      latestAddress.textContent = latest.address;
+      latestCreated.textContent = latest.createdAt;
+    }
+
+    async function loadContacts() {
+      adminMessage.textContent = '';
+
+      try {
+        const response = await fetch('/api/admin/contacts');
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Unable to load contacts.');
+        }
+
+        renderSummary(result.contacts);
+
+        if (!result.contacts.length) {
+          contactsBody.innerHTML = '<tr><td colspan="6">No contact submissions yet.</td></tr>';
+          return;
+        }
+
+        contactsBody.innerHTML = result.contacts.map((contact) => `
+          <tr>
+            <td>
+              <input
+                type="checkbox"
+                class="contact-checkbox"
+                data-name="${escapeHtml(contact.name)}"
+                data-phone="${escapeHtml(contact.phone)}"
+              >
+            </td>
+            <td>${escapeHtml(contact.name)}</td>
+            <td>${escapeHtml(contact.phone)}</td>
+            <td>${escapeHtml(contact.email)}</td>
+            <td>${escapeHtml(contact.address)}</td>
+            <td>${escapeHtml(contact.createdAt)}</td>
+          </tr>
+        `).join('');
+      } catch (error) {
+        contactsBody.innerHTML = '<tr><td colspan="6">Unable to load contacts.</td></tr>';
+        adminMessage.textContent = error.message;
+        adminMessage.className = 'form-message error';
+      }
+    }
+
+    async function hideSelectedContacts() {
+      const selected = Array.from(document.querySelectorAll('.contact-checkbox:checked')).map((checkbox) => ({
+        name: checkbox.dataset.name,
+        phone: checkbox.dataset.phone
+      }));
+
+      if (!selected.length) {
+        adminMessage.textContent = 'Select at least one contact.';
+        adminMessage.className = 'form-message error';
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/admin/contacts/hide', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contacts: selected
+          })
+        });
+
+        const result = await response.json();
+        adminMessage.textContent = result.message;
+        adminMessage.className = response.ok ? 'form-message success' : 'form-message error';
+
+        if (response.ok) {
+          await loadContacts();
+        }
+      } catch {
+        adminMessage.textContent = 'Unable to hide selected contacts.';
+        adminMessage.className = 'form-message error';
+      }
+    }
+
+    tabButtons.forEach((button) => {
+      button.addEventListener('click', function () {
+        switchTab(button.dataset.tab);
+      });
+    });
+
+    refreshButton.addEventListener('click', loadContacts);
+    hideSelectedButton.addEventListener('click', hideSelectedContacts);
+    switchTab('new-enquiry');
+    loadContacts();
+  </script>
+</body>
+</html>
